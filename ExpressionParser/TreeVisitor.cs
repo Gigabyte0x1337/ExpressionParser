@@ -1,8 +1,10 @@
-﻿namespace ExpressionParser
+﻿using ExpressionParser.Expression;
+
+namespace ExpressionParser
 {
     public class TreeVisitor
     {
-        protected void Visit(Expression expression)
+        protected void Visit(Expression.Expression expression)
         {
             switch (expression)
             {

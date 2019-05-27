@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using ExpressionParser.Expression;
 
-namespace ExpressionParser
+namespace ExpressionParser.Parser
 {
     public class ExpressionParser
     {
@@ -35,18 +36,95 @@ namespace ExpressionParser
         /// ParseBinaryExpression Code
         /// </summary>
         /// <returns></returns>
-        public Expression Parse()
+        public Expression.Expression Parse()
         {
-            var expression = ParseTernaryExpression();
+            var expression = ParseAssignmentExpression();
 
             return expression;
+        }
+
+        private Expression.Expression ParseAssignmentExpression()
+        {
+            var left = ParseVariableDeclerationExpression();
+
+            while (
+                Check(TokenType.Assign) ||
+                Check(TokenType.AddAssign) ||
+                Check(TokenType.SubtractAssign) ||
+                Check(TokenType.MultiplyAssign) ||
+                Check(TokenType.DivideAssign) ||
+                Check(TokenType.ExponentAssign) ||
+                Check(TokenType.ModuloAssign)
+            )
+            {
+                var token = _lexer.Current;
+
+                _lexer.Next();
+
+                var right = ParseAssignmentExpression();
+
+                var assignmentExpression = new AssignmentExpression()
+                {
+                    Left = left,
+                    Right = right,
+                    Type = token.Type
+                };
+
+                assignmentExpression.Left.Parent = assignmentExpression;
+                assignmentExpression.Right.Parent = assignmentExpression;
+
+                if (left is VariableDeclerationExpression)
+                {
+                    if (token.Type != TokenType.Assign)
+                    {
+                        throw new Exception("Expected = ");
+                    }
+
+                    return assignmentExpression;
+                }
+
+                left = assignmentExpression;
+            }
+
+            return left;
+        }
+
+        /// <summary>
+        /// Parsers let s
+        /// </summary>
+        /// <returns></returns>
+        private Expression.Expression ParseVariableDeclerationExpression()
+        {
+            if (Check(TokenType.KeywordLet) || Check(TokenType.KeywordConst))
+            {
+                var token = _lexer.Current;
+
+                _lexer.Next();
+
+                if (!Check(TokenType.Identifier))
+                {
+                    throw new Exception("Expected token Identifier.");
+                }
+
+                var variableDeclerationExpression = new VariableDeclerationExpression()
+                {
+                    Name = _lexer.Current.Value,
+                    Type = token.Type
+                };
+
+                _lexer.Next();
+
+                return variableDeclerationExpression;
+            }
+
+            return ParseTernaryExpression();
         }
 
         /// <summary>
         /// Parses {conditionExpression}?{trueExpression}:{falseExpression}
         /// </summary>
         /// <returns></returns>
-        public Expression ParseTernaryExpression()
+        public Expression.Expression ParseTernaryExpression()
         {
             var condition = ParseBinaryExpression(0);
 
@@ -75,13 +153,13 @@ namespace ExpressionParser
 
             return condition;
         }
-        
+
         /// <summary>
         /// Parses all the binary operators + - * / % && ||... etc.
         /// </summary>
         /// <param name="precedence"></param>
         /// <returns></returns>
-        private Expression ParseBinaryExpression(int precedence)
+        private Expression.Expression ParseBinaryExpression(int precedence)
         {
             var left = ParseUnary();
 
@@ -109,7 +187,7 @@ namespace ExpressionParser
             return left;
         }
 
-        private Expression ParseUnary()
+        private Expression.Expression ParseUnary()
         {
             // ++{expression} or --{expression} or !{expression} or +{expression} or -{expression}
             if (Check(TokenType.Decrement) ||
@@ -133,7 +211,7 @@ namespace ExpressionParser
             return expression;
         }
 
-        private Expression ParseMemberAccessAndArrayAccess()
+        private Expression.Expression ParseMemberAccessAndArrayAccess()
         {
             // constants / functions / variables
             var expression = ParsePrimary();
@@ -158,7 +236,7 @@ namespace ExpressionParser
         /// TODO Use nice types instead of token type
         /// </summary>
         /// <returns></returns>
-        private Expression ParsePrimary()
+        private Expression.Expression ParsePrimary()
         {
             if (Check(TokenType.Identifier))
             {
@@ -168,7 +246,7 @@ namespace ExpressionParser
             if (Check(TokenType.Decimal) ||
                 Check(TokenType.Int) ||
                 Check(TokenType.StringLiteral) ||
-                Check(TokenType.KeywordTrue) || 
+                Check(TokenType.KeywordTrue) ||
                 Check(TokenType.KeywordFalse))
             {
                 var token = _lexer.Current;
@@ -205,7 +283,7 @@ namespace ExpressionParser
         /// Parse {expression} or {expression}({expression}, {expression})
         /// </summary>
         /// <returns></returns>
-        private Expression ParseFunctionCallAndVariableExpression()
+        private Expression.Expression ParseFunctionCallAndVariableExpression()
         {
             var identifier = _lexer.Current;
 
@@ -216,7 +294,7 @@ namespace ExpressionParser
                 var functionCall = new FunctionCallExpression
                 {
                     Name = identifier.Value,
-                    Arguments = new List<Expression>()
+                    Arguments = new List<Expression.Expression>()
                 };
 
                 _lexer.Next();
@@ -247,7 +325,7 @@ namespace ExpressionParser
         /// Parse ++{expression} and --{expression}
         /// </summary>
         /// <returns></returns>
-        private Expression ParsePrefixUnaryExpression()
+        private Expression.Expression ParsePrefixUnaryExpression()
         {
             var type = _lexer.Current.Type;
 
@@ -262,9 +340,19 @@ namespace ExpressionParser
                 { TokenType.Plus, UnaryOperator.Positive }
             };
 
+            var expression = ParseMemberAccessAndArrayAccess();
+
+            if ((type == TokenType.Increment || type == TokenType.Decrement) &&
+                !(expression is MemberAccessExpression ||
+                  expression is ArrayAccessExpression ||
+                  expression is VariableExpression))
+            {
+                throw new Exception("left handside expression must be a member or a variable");
+            }
+
             var unary = new UnaryExpression()
             {
-                Expression = ParseMemberAccessAndArrayAccess(),
+                Expression = expression,
                 Operator = typeMapping[type]
             };
 
@@ -278,7 +366,7 @@ namespace ExpressionParser
         /// </summary>
         /// <param name="expression"></param>
         /// <returns></returns>
-        private Expression ParseArrayAccess(Expression expression)
+        private Expression.Expression ParseArrayAccess(Expression.Expression expression)
         {
             var arrayAccessExpression = new ArrayAccessExpression()
             {
@@ -297,7 +385,7 @@ namespace ExpressionParser
         /// </summary>
         /// <param name="expression"></param>
         /// <returns></returns>
-        private Expression ParseMemberAccess(Expression expression)
+        private Expression.Expression ParseMemberAccess(Expression.Expression expression)
         {
             if (!Check(TokenType.Identifier))
             {
@@ -323,11 +411,18 @@ namespace ExpressionParser
         /// </summary>
         /// <param name="expression"></param>
         /// <returns></returns>
-        private Expression ParsePostfixUnaryExpression(Expression expression)
+        private Expression.Expression ParsePostfixUnaryExpression(Expression.Expression expression)
         {
             var token = _lexer.Current;
 
             _lexer.Next();
+
+            if (!(expression is MemberAccessExpression ||
+                  expression is ArrayAccessExpression  ||
+                  expression is VariableExpression))
+            {
+                throw new Exception("left handside expression must be a member or a variable");
+            }
 
             var unary = new UnaryExpression()
             {

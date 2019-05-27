@@ -1,4 +1,6 @@
-﻿namespace ExpressionParser
+﻿using ExpressionParser.Parser;
+
+namespace ExpressionParser.Expression
 {
     public class ConstantExpression : Expression
     {

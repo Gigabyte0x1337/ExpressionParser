@@ -1,4 +1,4 @@
-﻿namespace ExpressionParser
+﻿namespace ExpressionParser.Expression
 {
     public class Expression
     {

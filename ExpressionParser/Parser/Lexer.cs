@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace ExpressionParser
+namespace ExpressionParser.Parser
 {
     public class Lexer
     {
@@ -81,7 +81,12 @@ namespace ExpressionParser
 
         public void LexWhiteSpaces()
         {
-            while (_charReader.Current == ' ')
+            while (
+                _charReader.Current == ' '  || 
+                _charReader.Current == '\t' || 
+                _charReader.Current == '\n' || 
+                _charReader.Current == '\r' ||
+                _charReader.Current == '\f')
             {
                 _charReader.Next();
             }
@@ -137,7 +142,8 @@ namespace ExpressionParser
                 { "for", TokenType.KeywordFor },
                 { "false", TokenType.KeywordFalse },
                 { "true", TokenType.KeywordTrue },
-                { "var", TokenType.KeywordVar }
+                { "let", TokenType.KeywordLet },
+                { "const", TokenType.KeywordConst }
             };
 
             if (keywordLookup.ContainsKey(name))

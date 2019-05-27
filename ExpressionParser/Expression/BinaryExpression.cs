@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace ExpressionParser
+namespace ExpressionParser.Expression
 {
     public class BinaryExpression : Expression
     {

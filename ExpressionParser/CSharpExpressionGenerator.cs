@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using ExpressionParser.Expression;
+using ExpressionParser.Parser;
 
 namespace ExpressionParser
 {
@@ -21,7 +23,7 @@ namespace ExpressionParser
             );
         }
 
-        public object Invoke(Expression expression)
+        public object Invoke(Expression.Expression expression)
         {
             var csExpression = Evaluate(expression);
 
@@ -33,7 +35,7 @@ namespace ExpressionParser
                 .DynamicInvoke(Context.Select(o => o.Value).ToArray());
         }
 
-        public System.Linq.Expressions.Expression Evaluate(Expression expression)
+        public System.Linq.Expressions.Expression Evaluate(Expression.Expression expression)
         {
             switch (expression)
             {

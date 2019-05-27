@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace ExpressionParser
+namespace ExpressionParser.Expression
 {
     public class FunctionCallExpression : Expression
     {

@@ -1,4 +1,4 @@
-﻿namespace ExpressionParser
+﻿namespace ExpressionParser.Parser
 {
     public class CharReader
     {

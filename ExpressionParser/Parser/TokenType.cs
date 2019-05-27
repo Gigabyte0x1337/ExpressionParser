@@ -1,4 +1,4 @@
-﻿namespace ExpressionParser
+﻿namespace ExpressionParser.Parser
 {
     public enum TokenType
     {
@@ -42,7 +42,8 @@
         Colon,
         KeywordTrue,
         KeywordFalse,
-        KeywordVar,
+        KeywordLet,
+        KeywordConst,
         KeywordIf,
         KeywordFor
     }
